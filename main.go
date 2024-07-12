@@ -6,5 +6,6 @@ import (
 
 func main() {
 	crawlers.GetWakacjeOffers()
-	crawlers.GetTuiOffers()
+	crawlers.GetItakaOffers()
+	crawlers.GetRainbowOffers()
 }
