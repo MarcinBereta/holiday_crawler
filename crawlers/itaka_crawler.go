@@ -8,12 +8,14 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func generateItakaString() string {
+func generateItakaString(country string) string {
 	currentTime := time.Now()
 	maxDate := "31.07.2024"
 	userDate := currentTime.Format("02.01.2006")
 	var stringBuild strings.Builder = strings.Builder{}
-	stringBuild.WriteString("https://www.itaka.pl/all-inclusive/grecja/?dateFrom=")
+	stringBuild.WriteString("https://www.itaka.pl/all-inclusive/")
+	stringBuild.WriteString(country)
+	stringBuild.WriteString("/?dateFrom=")
 	stringBuild.WriteString(userDate)
 	stringBuild.WriteString("&dateTo=")
 	stringBuild.WriteString(maxDate)
@@ -22,10 +24,11 @@ func generateItakaString() string {
 	return stringBuild.String()
 }
 
-func GetItakaOffers() {
-	url := generateItakaString()
+func GetItakaOffers(country string) []Offer{
+	url := generateItakaString(country)
 	c := colly.NewCollector()
 
+	var offers []Offer
 	c.OnHTML("div.styles_c__f1i9i", func(e *colly.HTMLElement) {
 		location := strings.Builder{}
 		e.ForEach("div.styles_destination__tOoSF", func(i int, el *colly.HTMLElement) {
@@ -40,12 +43,16 @@ func GetItakaOffers() {
 		ratingValue := e.ChildText("span.styles_c__rIHSD")
 		link := e.ChildAttr("a.styles_c__MESiM", "href")
 
-		fmt.Printf("Name: %v\n", name)
-		fmt.Printf("Price: %v PLN\n", price)
-		fmt.Printf("Departure place: %v\n", departurePlace)
-		fmt.Printf("Departure date: %v\n", departureDate)
-		fmt.Printf("Rating value: %v\n", ratingValue)
-		fmt.Printf("Link: https://itaka.pl%v\n", link)
+		offer := Offer{
+			Name: name,
+			Price: price,
+			DepartureDate: departureDate,
+			DeparturePlace: departurePlace,
+			RatingValue: ratingValue,
+			Link: fmt.Sprintf("https://itaka.pl%v", link),
+		}
+
+		offers = append(offers, offer)
 
 	})
 
@@ -58,4 +65,6 @@ func GetItakaOffers() {
 	})
 
 	c.Visit(url)
+
+	return offers
 }

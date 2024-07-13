@@ -30,29 +30,32 @@ func removeLastNChars(s string, n int) string {
 	return s[:len(s)-n]
 }
 
-func generateWakacjeUrl() string {
+func generateWakacjeUrl(country string) string {
     currentTime := time.Now()
     maxDate := "2024-07-31"
     userDate := currentTime.Format("2006-01-02")
     var stringBuild strings.Builder = strings.Builder{}
-    stringBuild.WriteString("https://www.wakacje.pl/wczasy/grecja/?od-")
+    stringBuild.WriteString("https://www.wakacje.pl/wczasy/")
+	stringBuild.WriteString(country)
+	stringBuild.WriteString("/?od-")
     stringBuild.WriteString(userDate)
     stringBuild.WriteString(",do-")
     stringBuild.WriteString(maxDate)
-    stringBuild.WriteString(",6-8-dni,od-2500zl,do-2800zl,samolotem,all-inclusive,z-katowic,z-krakowa,ocena-malejaco,za-osobe")
+    stringBuild.WriteString(",6-8-dni,od-2500zl,do-3500zl,samolotem,all-inclusive,z-katowic,z-krakowa,ocena-malejaco,za-osobe")
     return stringBuild.String()
 }
 
-func GetWakacjeOffers() {
-    url := generateWakacjeUrl()
+func GetWakacjeOffers(country string) []Offer {
+    url := generateWakacjeUrl(country)
     c := colly.NewCollector()
+	var offers []Offer
     c.OnHTML("script#__NEXT_DATA__", func(e *colly.HTMLElement) {
 		
 		jq := gojsonq.New().JSONString(e.Text)
 
 		for counter := 0; counter < 10; counter++ {
 			path := "props.stores.storeOffers.offers.data.[" + strconv.Itoa(counter) + "]"
-			keys := [8]string{"name", "price", "departureDate", "returnDate", "departurePlace", "ratingValue", "link", "duration"}
+			keys := [9]string{"name", "price", "departureDate", "returnDate", "departurePlace", "ratingValue", "link", "duration", "photos.570,428.[0]"}
 		
 			name := jq.Copy().Find(path + "." + keys[0])
 			price := jq.Copy().Find(path + "." + keys[1])
@@ -62,30 +65,37 @@ func GetWakacjeOffers() {
 			ratingValue := jq.Copy().Find(path + "." + keys[5])
 			link := jq.Copy().Find(path + "." + keys[6])
 			duration := jq.Copy().Find(path + "." + keys[7])
-
-		
-			if name == nil || price == nil || departureData == nil || returnDate == nil || departurePlace == nil || ratingValue == nil{
+			image := jq.Copy().Find(path + "." + keys[8])
+			
+			if link == nil {
 				break
 			}
-		
-			fmt.Printf("Name: %v\n", name)
-			fmt.Printf("Price: %v PLN\n", price)
-			fmt.Printf("Departure data: %v\n", departureData)
-			fmt.Printf("Return date: %v\n", returnDate)
-			fmt.Printf("Departure place: %v\n", departurePlace)
-			fmt.Printf("Rating value: %v\n", ratingValue)
-			fmt.Printf("Duration: %v\n", duration)
 
 			reversedLink := reverse(link.(string))
 			reversedLink = removeLastNChars(reversedLink, 12)
 			reversedLink = replaceF2(reversedLink)
-			fmt.Printf("Link: https://wakacje.pl%v?od-%v,%v-dni,all-inclusive,z-%v", reversedLink, departureData, duration, departurePlace)
 
+			offer := Offer{
+				Name: name.(string),
+				Price:strconv.FormatFloat(price.(float64), 'f', -1, 64),
+				DepartureDate: departureData.(string),
+				ReturnDate: returnDate.(string),
+				DeparturePlace: departurePlace.(string),
+				RatingValue: strconv.FormatFloat(ratingValue.(float64), 'f', -1, 64),
+				Link: fmt.Sprintf("https://wakacje.pl%v?od-%v,%v-dni,all-inclusive,z-%v", reversedLink, departureData, duration, departurePlace),
+				Duration: strconv.FormatFloat(duration.(float64), 'f', -1, 64),
+				Image: image.(string),
+			}
 
-			fmt.Println()
+			offers = append(offers, offer)
 		}
-
     })
 
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Visited", r.Request.URL)
+	})
+
     c.Visit(url)
+
+	return offers
 }

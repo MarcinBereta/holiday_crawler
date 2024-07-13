@@ -1,0 +1,23 @@
+<html>
+<head>
+    <title>Wakacje</title>
+</head>
+
+<body>
+    <p><strong>Offers:</strong> {{ . | len }}</p>
+    {{ range . }}
+    <div style="display: flex; flex-direction: row; gap: 15px; margin-bottom: 10px;">
+        <a href="{{ .Link }}" target="_blank"><img height="350px" width="500px" src="{{ .Image }}" alt="{{ .Name }}" /></a>
+        <div>
+	        <h3><a href="{{ .Link }}" target="_blank">{{ .Name }}</a></h3>
+	        <p>Cena: {{ .Price }}</p>
+            <p>Wylot: {{ .DepartureDate }}</p>
+            <p>Powrót: {{ .ReturnDate }}</p>
+            <p>Skąd wylot: {{ .DeparturePlace }}</p>
+            <p>Ocena: {{ .RatingValue }}</p>
+        </div>
+    </div>
+    {{ end }}
+</body>
+
+</html>

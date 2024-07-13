@@ -8,7 +8,7 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func generateTuiString() string {
+func generateTuiString(country string) string {
 	currentTime := time.Now()
 	maxDate := "31.07.2024"
 	userDate := currentTime.Format("02.01.2006")
@@ -22,8 +22,8 @@ func generateTuiString() string {
 	return stringBuild.String()
 }
 
-func GetTuiOffers() {
-	url := generateTuiString()
+func GetTuiOffers(country string) {
+	url := generateTuiString(country)
 	c := colly.NewCollector()
 	c.OnHTML("div.offer-tile", func(e *colly.HTMLElement) {
 		name := e.ChildText("span.offer-tile-body__hotel-name")
